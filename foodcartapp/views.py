@@ -2,10 +2,13 @@ import json
 
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Product, Order, OrderItem
 
 
+@api_view(['GET'])
 def banners_list_api(request):
     # FIXME move data to db?
     return JsonResponse([
@@ -30,6 +33,7 @@ def banners_list_api(request):
     })
 
 
+@api_view(['GET'])
 def product_list_api(request):
     products = Product.objects.select_related('category').available()
 
@@ -58,9 +62,12 @@ def product_list_api(request):
     })
 
 
+@api_view(['GET'])
 def register_order(request):
     try:
-        order_description = json.loads(request.body.decode())
+        # order_description = json.loads(request.body.decode())
+        order_description = request.data
+        print(order_description)
     except ValueError:
         return JsonResponse({
             'error': 'bla bla bla',
@@ -77,4 +84,4 @@ def register_order(request):
             product=Product.objects.filter(pk=product['product'])[0],
             quantity=product['quantity'],
         )
-    return JsonResponse({})
+    return Response()
