@@ -62,7 +62,7 @@ def product_list_api(request):
     })
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
 def register_order(request):
     try:
         # order_description = json.loads(request.body.decode())
