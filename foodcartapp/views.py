@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from .models import Product, Order, OrderItem
 
 
-# @api_view(['GET'])
 def banners_list_api(request):
     # FIXME move data to db?
     return JsonResponse([
@@ -33,7 +32,6 @@ def banners_list_api(request):
     })
 
 
-# @api_view(['GET'])
 def product_list_api(request):
     products = Product.objects.select_related('category').available()
 
@@ -62,13 +60,12 @@ def product_list_api(request):
     })
 
 
-# @api_view(['GET'])
+@api_view(['POST'])
 def register_order(request):
     try:
-        # order_description = json.loads(request.body.decode())
         order_description = request.data
     except ValueError:
-        return JsonResponse({
+        return Response({
             'error': 'bla bla bla',
         })
     order = Order.objects.create(
@@ -80,9 +77,7 @@ def register_order(request):
     for product in order_description['products']:
         OrderItem.objects.create(
             order=order,
-            product=Product.objects.filter(pk=product['product'])[0],
+            product=Product.objects.filter(pk=product['product']).first(),
             quantity=product['quantity'],
         )
-    return Response()
-        # JsonResponse({})
-
+    return Response({})
