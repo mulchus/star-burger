@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from phonenumber_field.validators import validate_international_phonenumber
+from django.core.exceptions import ValidationError
 
 from .models import Product, Order, OrderItem
 
@@ -71,37 +73,58 @@ def register_order(request):
         return Response({
             'error': 'Some ValueError',
         })
+    missing_fields = []
+    not_valid_strings = []
+    result_message = ""
+
     for field in ORDER_FIELDS:
         try:
-            value = order_description[field]
+            order_description[field]
         except KeyError:
+            missing_fields.append(field)
+    if missing_fields:
+        return Response({
+            f'{", ".join(missing_fields)}: обязательное поле.',
+        })
+
+    for field in ORDER_FIELDS:
+        value = order_description[field]
+        if field == 'products' and not value and isinstance(order_description[field], list):
             return Response({
-                f'{field}: Обязательное поле.',
+                f'{field}: этот список не может быть пустым.',
             })
-        if not value and field == 'products' and isinstance(order_description['products'], list):
-            return Response({
-                'products: Этот список не может быть пустым.',
-            })
-        elif not value:
-            return Response({
-                f'{field}: Это поле не может быть пустым.',
-            })
-        elif not isinstance(order_description['products'][0], dict) and field == 'products' and isinstance(order_description['products'], list):
-            return Response({
-                'products: В списке данные не имеют тип словаря.',
-            })
+        elif not value and isinstance(order_description[field], str) or value is None:
+            missing_fields.append(field)
+
+        if field != 'products' and value is not None and not isinstance(order_description[field], str):
+            not_valid_strings.append(field)
+
+    if not_valid_strings:
+        result_message += f'{", ".join(not_valid_strings)}: недопустимая строка, '
+    if missing_fields:
+        result_message += f'{", ".join(missing_fields)}: это поле не может быть пустым.'
+    if result_message:
+        return Response({result_message})
 
     if isinstance(order_description['products'], str):
         return Response({
-            'products: Ожидался list со значениями, но был получен "str".',
+            'products: ожидался list со значениями, но был получен "str".',
+        })
+
+    for product in order_description['products']:
+        if product['product'] > Product.objects.order_by('-pk').first().pk:
+            return Response({
+                f'products: недопустимый первичный ключ "{product["product"]}"',
+            })
+
+    try:
+        validate_international_phonenumber(order_description['phonenumber'])
+    except ValidationError:
+        return Response({
+            'phonenumber: введен некорректный номер телефона.',
         })
 
 
-    # for key in dict(order_description).keys():
-    #     if not order_description[key]:
-    #         return Response({
-    #             f'{key}: Это поле не может быть пустым.',
-    #         })
 
     order = Order.objects.create(
         address=order_description['address'],
