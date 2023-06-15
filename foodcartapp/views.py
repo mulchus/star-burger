@@ -8,6 +8,9 @@ from rest_framework.response import Response
 from .models import Product, Order, OrderItem
 
 
+ORDER_FIELDS = ['products', 'firstname', 'lastname', 'phonenumber', 'address']
+
+
 def banners_list_api(request):
     # FIXME move data to db?
     return JsonResponse([
@@ -66,8 +69,40 @@ def register_order(request):
         order_description = request.data
     except ValueError:
         return Response({
-            'error': 'bla bla bla',
+            'error': 'Some ValueError',
         })
+    for field in ORDER_FIELDS:
+        try:
+            value = order_description[field]
+        except KeyError:
+            return Response({
+                f'{field}: Обязательное поле.',
+            })
+        if not value and field == 'products' and isinstance(order_description['products'], list):
+            return Response({
+                'products: Этот список не может быть пустым.',
+            })
+        elif not value:
+            return Response({
+                f'{field}: Это поле не может быть пустым.',
+            })
+        elif not isinstance(order_description['products'][0], dict) and field == 'products' and isinstance(order_description['products'], list):
+            return Response({
+                'products: В списке данные не имеют тип словаря.',
+            })
+
+    if isinstance(order_description['products'], str):
+        return Response({
+            'products: Ожидался list со значениями, но был получен "str".',
+        })
+
+
+    # for key in dict(order_description).keys():
+    #     if not order_description[key]:
+    #         return Response({
+    #             f'{key}: Это поле не может быть пустым.',
+    #         })
+
     order = Order.objects.create(
         address=order_description['address'],
         lastname=order_description['lastname'],
