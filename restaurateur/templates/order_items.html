@@ -19,12 +19,12 @@
       <th>Адрес доставки</th>
     </tr>
 
-    {% for item in orders %}
+    {% for order in orders %}
       <tr>
-        <td>{{ item.id }}</td>
-        <td>{{ item.lastname }} {{ item.firstname }}</td>
-        <td>{{ item.phonenumber }}</td>
-        <td>{{ item.address }}</td>
+        <td>{{ order.id }}</td>
+        <td>{{ order.lastname }} {{ order.firstname }}</td>
+        <td>{{ order.phonenumber }}</td>
+        <td>{{ order.address }}</td>
       </tr>
     {% endfor %}
    </table>

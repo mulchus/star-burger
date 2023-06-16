@@ -6,9 +6,10 @@ from django.contrib.auth.decorators import user_passes_test
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
+from django.db.models import Sum
 
 
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant, Order, OrderItem
 
 
 class Login(forms.Form):
@@ -91,6 +92,10 @@ def view_restaurants(request):
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
-def view_orders(request):
-    orders = Order.objects.all()
+def view_orders(request):                                                   # .group_by('id', 'lastname', 'firstname', 'phonenumber', 'address')
+    # order_items = OrderItem.objects.prefetch_related('order', 'product')     # .annotate(total=Sum('product.price'))                #  .distinct('id', 'lastname', 'firstname', 'phonenumber', 'address')
+    orders = Order.objects.prefetch_related('items')
+    # for order_item in order_items:
+    for order in orders:
+        print(order.items)
     return render(request, template_name='order_items.html', context={'orders': orders})
