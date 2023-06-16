@@ -90,5 +90,9 @@ def register_order(request):
     OrderItem.objects.bulk_create(order_items)
 
     return Response({
-        'order_id': order.id,
+        'id': order.id,
+        'firstname': order.firstname,
+        'lastname': order.lastname,
+        'phonenumber': str(order.phonenumber),
+        'address': order.address,
     })
