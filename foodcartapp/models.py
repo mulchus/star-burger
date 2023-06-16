@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -154,6 +155,14 @@ class Order(models.Model):
         return f'{self.lastname} {self.firstname}, {self.address}, {self.phonenumber}'
 
 
+class OrderItemQuerySet(models.QuerySet):
+    def get_prices(self):
+        return self.prefetch_related(
+            'order', 'product').values(
+            'order__pk', 'order__lastname', 'order__firstname', 'order__address', 'order__phonenumber').annotate(
+            total_price=Sum(F('product__price') * F('quantity')))
+
+
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
@@ -171,6 +180,8 @@ class OrderItem(models.Model):
         'количество',
         db_index=True,
     )
+
+    manager = OrderItemQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'элемент заказа'
