@@ -1,16 +1,10 @@
-import json
-
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from phonenumber_field.validators import validate_international_phonenumber
-from django.core.exceptions import ValidationError
+from rest_framework.serializers import ModelSerializer
 
 from .models import Product, Order, OrderItem
-
-
-ORDER_FIELDS = ['products', 'firstname', 'lastname', 'phonenumber', 'address']
 
 
 def banners_list_api(request):
@@ -65,77 +59,36 @@ def product_list_api(request):
     })
 
 
+class OrderItemSerializer(ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['product', 'quantity']
+
+
+class OrderSerializer(ModelSerializer):
+    products = OrderItemSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ['products', 'firstname', 'lastname', 'phonenumber', 'address']
+
+
 @api_view(['POST'])
 def register_order(request):
-    try:
-        order_description = request.data
-    except ValueError:
-        return Response({
-            'error': 'Some ValueError',
-        })
-    missing_fields = []
-    not_valid_strings = []
-    result_message = ""
-
-    for field in ORDER_FIELDS:
-        try:
-            order_description[field]
-        except KeyError:
-            missing_fields.append(field)
-    if missing_fields:
-        return Response({
-            f'{", ".join(missing_fields)}: обязательное поле.',
-        })
-
-    for field in ORDER_FIELDS:
-        value = order_description[field]
-        if field == 'products' and not value and isinstance(order_description[field], list):
-            return Response({
-                f'{field}: этот список не может быть пустым.',
-            })
-        elif not value and isinstance(order_description[field], str) or value is None:
-            missing_fields.append(field)
-
-        if field != 'products' and value is not None and not isinstance(order_description[field], str):
-            not_valid_strings.append(field)
-
-    if not_valid_strings:
-        result_message += f'{", ".join(not_valid_strings)}: недопустимая строка, '
-    if missing_fields:
-        result_message += f'{", ".join(missing_fields)}: это поле не может быть пустым.'
-    if result_message:
-        return Response({result_message})
-
-    if isinstance(order_description['products'], str):
-        return Response({
-            'products: ожидался list со значениями, но был получен "str".',
-        })
-
-    for product in order_description['products']:
-        if product['product'] > Product.objects.order_by('-pk').first().pk:
-            return Response({
-                f'products: недопустимый первичный ключ "{product["product"]}"',
-            })
-
-    try:
-        validate_international_phonenumber(order_description['phonenumber'])
-    except ValidationError:
-        return Response({
-            'phonenumber: введен некорректный номер телефона.',
-        })
-
-
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
     order = Order.objects.create(
-        address=order_description['address'],
-        lastname=order_description['lastname'],
-        firstname=order_description['firstname'],
-        phonenumber=order_description['phonenumber'],
+        address=serializer.validated_data['address'],
+        lastname=serializer.validated_data['lastname'],
+        firstname=serializer.validated_data['firstname'],
+        phonenumber=serializer.validated_data['phonenumber'],
     )
-    for product in order_description['products']:
-        OrderItem.objects.create(
-            order=order,
-            product=Product.objects.filter(pk=product['product']).first(),
-            quantity=product['quantity'],
-        )
-    return Response({})
+
+    order_items_fields = serializer.validated_data['products']
+    order_items = [OrderItem(order=order, **products) for products in order_items_fields]
+    OrderItem.objects.bulk_create(order_items)
+
+    return Response({
+        'order_id': order.id,
+    })
