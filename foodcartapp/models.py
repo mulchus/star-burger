@@ -180,8 +180,15 @@ class OrderItem(models.Model):
         'количество',
         db_index=True,
     )
+    product_fix_price = models.DecimalField(
+        'фиксированная цена товара',
+        db_index=True,
+        default=0,
+        max_digits=5,
+        decimal_places=2
+    )
 
-    manager = OrderItemQuerySet.as_manager()
+    objects = OrderItemQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'элемент заказа'

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
+from rest_framework.response import Response
 
 from .models import Product
 from .models import ProductCategory
@@ -130,3 +131,17 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderItemInline
     ]
+
+    # переопределен метод сохранения заказа
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for instance in instances:
+            if not instance.product_fix_price:  # если фиксированная цена не указана - она равна текущей
+                instance.product_fix_price = instance.product.price
+            if instance.product_fix_price < 0:
+                # raise ValueError('Цена не может быть отрицательной!')
+                return Response({'Цена не может быть отрицательной!'})
+            instance.save()
+        formset.save_m2m()
