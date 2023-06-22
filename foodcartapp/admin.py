@@ -124,10 +124,14 @@ class OrderAdmin(admin.ModelAdmin):
         'phonenumber',
     ]
     list_display = [
+        'status',
         'address',
         'firstname',
         'lastname',
         'phonenumber',
+    ]
+    list_filter = [
+        'status',
     ]
     inlines = [
         OrderItemInline

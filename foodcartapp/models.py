@@ -147,6 +147,19 @@ class Order(models.Model):
         db_index=True,
     )
 
+    status = models.CharField(
+        'статус',
+        max_length=12,
+        choices=(
+            ("Уточняется", "Уточняется"),
+            ("Собирается", "Собирается"),
+            ("Доставляется", "Доставляется"),
+            ("Выполнен", "Выполнен"),
+        ),
+        default="Уточняется",
+        db_index=True,
+    )
+
     class Meta:
         verbose_name = 'заказ'
         verbose_name_plural = 'заказы'
@@ -157,9 +170,10 @@ class Order(models.Model):
 
 class OrderItemQuerySet(models.QuerySet):
     def get_prices(self):
-        return self.prefetch_related(
+        return self.exclude(
+            order__status__exact='Выполнен').prefetch_related(
             'order', 'product').values(
-            'order__pk', 'order__lastname', 'order__firstname', 'order__address', 'order__phonenumber').annotate(
+            'order__pk', 'order__status', 'order__lastname', 'order__firstname', 'order__address', 'order__phonenumber').annotate(
             total_price=Sum(F('product__price') * F('quantity')))
 
 
