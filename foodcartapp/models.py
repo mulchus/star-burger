@@ -146,7 +146,6 @@ class Order(models.Model):
         max_length=15,
         db_index=True,
     )
-
     status = models.CharField(
         'статус',
         max_length=12,
@@ -158,6 +157,13 @@ class Order(models.Model):
         ),
         default="Уточняется",
         db_index=True,
+    )
+    comment = models.TextField(
+        'комментарий',
+        blank=True,
+        null=True,
+        db_index=True,
+        default='',
     )
 
     class Meta:
@@ -173,7 +179,8 @@ class OrderItemQuerySet(models.QuerySet):
         return self.exclude(
             order__status__exact='Выполнен').prefetch_related(
             'order', 'product').values(
-            'order__pk', 'order__status', 'order__lastname', 'order__firstname', 'order__address', 'order__phonenumber').annotate(
+            'order__pk', 'order__status', 'order__lastname', 'order__firstname', 'order__address',
+            'order__comment', 'order__phonenumber').annotate(
             total_price=Sum(F('product__price') * F('quantity')))
 
 
