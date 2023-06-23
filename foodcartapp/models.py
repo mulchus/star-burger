@@ -207,6 +207,17 @@ class Order(models.Model):
         db_index=True,
     )
 
+    payment_method = models.CharField(
+        'способ оплаты',
+        max_length=10,
+        choices=(
+            ("Наличные", "Наличные"),
+            ("Электронно", "Электронно"),
+        ),
+        default="Электронно",
+        db_index=True,
+    )
+
     class Meta:
         verbose_name = 'заказ'
         verbose_name_plural = 'заказы'
@@ -221,7 +232,7 @@ class OrderItemQuerySet(models.QuerySet):
         return self.exclude(
             order__status__exact='Выполнен').prefetch_related(
             'order', 'product').values(
-            'order__pk', 'order__status', 'order__lastname', 'order__firstname', 'order__address',
+            'order__pk', 'order__status', 'order__payment_method', 'order__lastname', 'order__firstname', 'order__address',
             'order__comment', 'order__phonenumber').annotate(
             total_price=Sum(F('product__price') * F('quantity')))
 
