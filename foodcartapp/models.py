@@ -2,18 +2,22 @@ from django.db import models
 from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
+from django.utils import timezone
 
 
 class Restaurant(models.Model):
+
     name = models.CharField(
         'название',
         max_length=50
     )
+
     address = models.CharField(
         'адрес',
         max_length=100,
         blank=True,
     )
+
     contact_phone = models.CharField(
         'контактный телефон',
         max_length=50,
@@ -29,6 +33,7 @@ class Restaurant(models.Model):
 
 
 class ProductQuerySet(models.QuerySet):
+
     def available(self):
         products = (
             RestaurantMenuItem.objects
@@ -39,6 +44,7 @@ class ProductQuerySet(models.QuerySet):
 
 
 class ProductCategory(models.Model):
+
     name = models.CharField(
         'название',
         max_length=50
@@ -53,10 +59,12 @@ class ProductCategory(models.Model):
 
 
 class Product(models.Model):
+
     name = models.CharField(
         'название',
         max_length=50
     )
+
     category = models.ForeignKey(
         ProductCategory,
         verbose_name='категория',
@@ -65,20 +73,24 @@ class Product(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
+
     price = models.DecimalField(
         'цена',
         max_digits=8,
         decimal_places=2,
         validators=[MinValueValidator(0)]
     )
+
     image = models.ImageField(
         'картинка'
     )
+
     special_status = models.BooleanField(
         'спец.предложение',
         default=False,
         db_index=True,
     )
+
     description = models.TextField(
         'описание',
         max_length=200,
@@ -96,18 +108,21 @@ class Product(models.Model):
 
 
 class RestaurantMenuItem(models.Model):
+
     restaurant = models.ForeignKey(
         Restaurant,
         related_name='menu_items',
         verbose_name="ресторан",
         on_delete=models.CASCADE,
     )
+
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name='menu_items',
         verbose_name='продукт',
     )
+
     availability = models.BooleanField(
         'в продаже',
         default=True,
@@ -126,26 +141,31 @@ class RestaurantMenuItem(models.Model):
 
 
 class Order(models.Model):
+
     address = models.CharField(
         'адрес',
         max_length=100,
         db_index=True,
     )
+
     firstname = models.CharField(
         'имя',
         max_length=30,
         db_index=True,
     )
+
     lastname = models.CharField(
         'фамилия',
         max_length=30,
         db_index=True,
     )
+
     phonenumber = PhoneNumberField(
         'мобильный номер:',
         max_length=15,
         db_index=True,
     )
+
     status = models.CharField(
         'статус',
         max_length=12,
@@ -158,12 +178,33 @@ class Order(models.Model):
         default="Уточняется",
         db_index=True,
     )
+
     comment = models.TextField(
         'комментарий',
         blank=True,
         null=True,
         db_index=True,
         default='',
+    )
+
+    registered_datetime = models.DateTimeField(
+        'зарегистрирован',
+        default=timezone.now,
+        db_index=True,
+    )
+
+    called_datetime = models.DateTimeField(
+        'созвонились',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    delivered_datetime = models.DateTimeField(
+        'доставлен',
+        blank=True,
+        null=True,
+        db_index=True,
     )
 
     class Meta:
@@ -175,6 +216,7 @@ class Order(models.Model):
 
 
 class OrderItemQuerySet(models.QuerySet):
+
     def get_prices(self):
         return self.exclude(
             order__status__exact='Выполнен').prefetch_related(
@@ -185,22 +227,26 @@ class OrderItemQuerySet(models.QuerySet):
 
 
 class OrderItem(models.Model):
+
     order = models.ForeignKey(
         Order,
         related_name='items',
         verbose_name="заказ",
         on_delete=models.CASCADE,
     )
+
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name='orders',
         verbose_name='товар',
     )
+
     quantity = models.IntegerField(
         'количество',
         db_index=True,
     )
+
     product_fix_price = models.DecimalField(
         'фиксированная цена товара',
         db_index=True,
