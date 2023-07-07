@@ -3,6 +3,7 @@ from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
+from django.db.models import Prefetch
 
 
 class Restaurant(models.Model):
@@ -218,6 +219,17 @@ class Order(models.Model):
         db_index=True,
     )
 
+    restaurant = models.ForeignKey(
+        Restaurant,
+        related_name='orders',
+        verbose_name="ресторан",
+        on_delete=models.CASCADE,
+        default=None,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
     class Meta:
         verbose_name = 'заказ'
         verbose_name_plural = 'заказы'
@@ -228,13 +240,53 @@ class Order(models.Model):
 
 class OrderItemQuerySet(models.QuerySet):
 
-    def get_prices(self):
-        return self.exclude(
-            order__status__exact='Выполнен').prefetch_related(
+    def get_orders(self):
+
+        def count_unique(restaurants_ids):
+            """
+            Возвращает словарь, в котором каждому уникальному элементу списка restaurants_ids соответствует
+            количество его повторений.
+            """
+            repeats = {}
+            for restaurant_id in set(restaurants_ids):
+                repeats[restaurant_id] = restaurants_ids.count(restaurant_id)
+            return repeats
+
+        menu_entries = RestaurantMenuItem.objects.values()
+        product_restaurants_item = {}
+        for menu_entry in menu_entries:
+            if not menu_entry['product_id'] in product_restaurants_item:
+                product_restaurants_item[menu_entry['product_id']] = (menu_entry['restaurant_id'], )
+            else:
+                product_restaurants_item[menu_entry['product_id']] += (menu_entry['restaurant_id'], )
+        # print(f'product_restaurants_item: {product_restaurants_item}')
+
+        items = self.select_related('product')
+        for item in items:
+            order_restaurant_ids = []
+            restaurants = item.product.menu_items.values()
+            for restaurant in restaurants:
+                order_restaurant_ids.append(restaurant['restaurant_id'])
+
+        orders_to_display = self.exclude(
+            order__status__exact='Выполнен').select_related(
             'order', 'product').values(
-            'order__pk', 'order__status', 'order__payment_method', 'order__lastname', 'order__firstname', 'order__address',
-            'order__comment', 'order__phonenumber').annotate(
-            total_price=Sum(F('product__price') * F('quantity')))
+            'order__pk', 'order__status', 'order__payment_method', 'order__lastname', 'order__firstname',
+            'order__address', 'order__comment', 'order__phonenumber', 'order__restaurant__name').annotate(
+            total_price=Sum(F('product_fix_price') * F('quantity'))).order_by('-order__status')
+
+        for entry in orders_to_display:
+            items_values = OrderItem.objects.filter(order__pk=entry['order__pk']).values()
+            all_order_restaurants = []
+            for item in items_values:
+                all_order_restaurants.extend(product_restaurants_item[item['product_id']])
+            restaurants_for_order = []
+            unique = count_unique(all_order_restaurants)
+            for restaurant_id in unique:
+                if unique[restaurant_id] == len(items_values):
+                    restaurants_for_order.append(Restaurant.objects.filter(pk=restaurant_id).first().name)
+            entry['restaurants'] = restaurants_for_order
+        return orders_to_display
 
 
 class OrderItem(models.Model):

@@ -139,17 +139,26 @@ class OrderAdmin(admin.ModelAdmin):
 
     # переопределен метод сохранения заказа
     def save_formset(self, request, form, formset, change):
+
+        order = form.save(commit=False)
+        print(order)
+        if order.restaurant and order.status == 'Уточняется':
+            order.status = 'Собирается'
+        elif not order.restaurant and order.status == 'Собирается':
+            order.status = 'Уточняется'
+        order.save()
+
         instances = formset.save(commit=False)
+        print(instances)
         for obj in formset.deleted_objects:
             obj.delete()
         for instance in instances:
             if not instance.product_fix_price:  # если фиксированная цена не указана - она равна текущей
                 instance.product_fix_price = instance.product.price
             if instance.product_fix_price < 0:
-                # raise ValueError('Цена не может быть отрицательной!')
                 return Response({'Цена не может быть отрицательной!'})
             instance.save()
-        formset.save_m2m()
+        # formset.save_m2m()
 
     def response_change(self, request, obj):
         res = super().response_change(request, obj)
