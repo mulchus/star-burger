@@ -1,9 +1,14 @@
+import requests
+import json
+
 from django.db import models
 from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from django.db.models import Prefetch
+from django.conf import settings
+from geopy import distance
 
 
 class Restaurant(models.Model):
@@ -252,6 +257,24 @@ class OrderItemQuerySet(models.QuerySet):
                 repeats[restaurant_id] = restaurants_ids.count(restaurant_id)
             return repeats
 
+        def fetch_coordinates(apikey, address):
+            base_url = "https://geocode-maps.yandex.ru/1.x"
+            response = requests.get(base_url, params={
+                "geocode": address,
+                "apikey": apikey,
+                "format": "json",
+            })
+            response.raise_for_status()
+            found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+            if not found_places:
+                return None
+
+            most_relevant = found_places[0]
+            lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+            return lon, lat
+
+        # начало основной функции
         menu_entries = RestaurantMenuItem.objects.values()
         product_restaurants_item = {}
         for menu_entry in menu_entries:
@@ -259,7 +282,6 @@ class OrderItemQuerySet(models.QuerySet):
                 product_restaurants_item[menu_entry['product_id']] = (menu_entry['restaurant_id'], )
             else:
                 product_restaurants_item[menu_entry['product_id']] += (menu_entry['restaurant_id'], )
-        # print(f'product_restaurants_item: {product_restaurants_item}')
 
         items = self.select_related('product')
         for item in items:
@@ -275,17 +297,30 @@ class OrderItemQuerySet(models.QuerySet):
             'order__address', 'order__comment', 'order__phonenumber', 'order__restaurant__name').annotate(
             total_price=Sum(F('product_fix_price') * F('quantity'))).order_by('-order__status')
 
-        for entry in orders_to_display:
-            items_values = OrderItem.objects.filter(order__pk=entry['order__pk']).values()
+        for record in orders_to_display:
+            delivery_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, record['order__address'])
+            order_items = OrderItem.objects.filter(order__pk=record['order__pk']).values()
             all_order_restaurants = []
-            for item in items_values:
-                all_order_restaurants.extend(product_restaurants_item[item['product_id']])
-            restaurants_for_order = []
+            for order_item in order_items:
+                all_order_restaurants.extend(product_restaurants_item[order_item['product_id']])
+            unsorted_restaurants = {}
             unique = count_unique(all_order_restaurants)
             for restaurant_id in unique:
-                if unique[restaurant_id] == len(items_values):
-                    restaurants_for_order.append(Restaurant.objects.filter(pk=restaurant_id).first().name)
-            entry['restaurants'] = restaurants_for_order
+                if unique[restaurant_id] == len(order_items):
+                    restaurant = Restaurant.objects.get(pk=restaurant_id)
+                    restaurant_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
+                    if restaurant_coordinates and delivery_coordinates:
+                        restaurant_lon, restaurant_lat = restaurant_coordinates
+                        delivery_lon, delivery_lat = delivery_coordinates
+                        restaurant_distance = \
+                            distance.distance((restaurant_lat, restaurant_lon), (delivery_lat, delivery_lon)).km
+                        unsorted_restaurants[restaurant.name] = round(restaurant_distance, 2)
+                    else:
+                        unsorted_restaurants[restaurant.name] = '?'
+            sorted_restaurants = dict(sorted(unsorted_restaurants.items(), key=lambda item: item[1]))
+            restaurants_for_order = [f'{restaurant} - {sorted_restaurants[restaurant]} км'
+                                     for restaurant in sorted_restaurants]
+            record['restaurants'] = restaurants_for_order
         return orders_to_display
 
 
