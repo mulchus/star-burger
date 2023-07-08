@@ -1,5 +1,4 @@
 import requests
-import json
 
 from django.db import models
 from django.db.models import F, Sum
@@ -9,6 +8,8 @@ from django.utils import timezone
 from django.db.models import Prefetch
 from django.conf import settings
 from geopy import distance
+from coordinates.models import Location
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class Restaurant(models.Model):
@@ -274,6 +275,28 @@ class OrderItemQuerySet(models.QuerySet):
             lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
             return lon, lat
 
+        def create_location(address):
+            new_loc_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, address)
+            if new_loc_coordinates:
+                new_loc_lon, new_loc_lat = new_loc_coordinates
+            else:
+                new_loc_lon, new_loc_lat = 0, 0
+            new_location = Location.objects.create(
+                address=address,
+                lat=new_loc_lat,
+                lon=new_loc_lon,
+            )
+            return new_location
+
+        def get_location(address):
+            try:
+                location = Location.objects.get(address=address)
+                # print(f'Получен адрес {location.address}')
+            except ObjectDoesNotExist:
+                location = create_location(address)
+                # print(f'Добавлен адрес {location.address}')
+            return location
+
         # начало основной функции
         menu_entries = RestaurantMenuItem.objects.values()
         product_restaurants_item = {}
@@ -298,7 +321,7 @@ class OrderItemQuerySet(models.QuerySet):
             total_price=Sum(F('product_fix_price') * F('quantity'))).order_by('-order__status')
 
         for record in orders_to_display:
-            delivery_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, record['order__address'])
+            delivery_coordinates = get_location(record['order__address'])
             order_items = OrderItem.objects.filter(order__pk=record['order__pk']).values()
             all_order_restaurants = []
             for order_item in order_items:
@@ -308,12 +331,16 @@ class OrderItemQuerySet(models.QuerySet):
             for restaurant_id in unique:
                 if unique[restaurant_id] == len(order_items):
                     restaurant = Restaurant.objects.get(pk=restaurant_id)
-                    restaurant_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
-                    if restaurant_coordinates and delivery_coordinates:
-                        restaurant_lon, restaurant_lat = restaurant_coordinates
-                        delivery_lon, delivery_lat = delivery_coordinates
+                    # print(f'запрашиваем координаты ресторана {restaurant.address}')
+                    restaurant_coordinates = get_location(restaurant.address)
+                    # print(f'restaurant_coordinates {restaurant_coordinates}')
+                    # print(restaurant_coordinates.lat, restaurant_coordinates.lon,
+                    #       delivery_coordinates.lat, delivery_coordinates.lon)
+                    if restaurant_coordinates.lat and restaurant_coordinates.lon \
+                            and delivery_coordinates.lat and delivery_coordinates.lon:
                         restaurant_distance = \
-                            distance.distance((restaurant_lat, restaurant_lon), (delivery_lat, delivery_lon)).km
+                            distance.distance((restaurant_coordinates.lat, restaurant_coordinates.lon),
+                                              (delivery_coordinates.lat, delivery_coordinates.lon)).km
                         unsorted_restaurants[restaurant.name] = round(restaurant_distance, 2)
                     else:
                         unsorted_restaurants[restaurant.name] = '?'
