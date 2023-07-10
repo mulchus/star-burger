@@ -12,11 +12,15 @@ class Location(models.Model):
     )
 
     lat = models.FloatField(
+        blank=True,
+        null=True,
         verbose_name='широта',
         db_index=True,
     )
 
     lon = models.FloatField(
+        blank=True,
+        null=True,
         verbose_name='долгота',
         db_index=True,
     )
