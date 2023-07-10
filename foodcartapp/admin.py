@@ -141,7 +141,6 @@ class OrderAdmin(admin.ModelAdmin):
     def save_formset(self, request, form, formset, change):
 
         order = form.save(commit=False)
-        print(order)
         if order.restaurant and order.status == 'Уточняется':
             order.status = 'Собирается'
         elif not order.restaurant and order.status == 'Собирается':
@@ -149,7 +148,6 @@ class OrderAdmin(admin.ModelAdmin):
         order.save()
 
         instances = formset.save(commit=False)
-        print(instances)
         for obj in formset.deleted_objects:
             obj.delete()
         for instance in instances:

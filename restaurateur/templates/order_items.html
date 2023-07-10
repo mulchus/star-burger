@@ -36,8 +36,8 @@
         <td>{{ order_item.order__address }}</td>
         <td>{{ order_item.order__comment }}</td>
         <td>
-          {% if order_item.order__restaurant__name %}
-            Готовится в {{ order_item.order__restaurant__name }}
+          {% if order_item.order__selected_restaurant__name %}
+            Готовится в {{ order_item.order__selected_restaurant__name }}
           {% elif order_item.restaurants %}
             <details open>
               <summary>Может быть приготовлен ресторанами:</summary>

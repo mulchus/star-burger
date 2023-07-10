@@ -2,9 +2,8 @@ from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.serializers import ModelSerializer
 from django.db import transaction
-
+from .serializers import OrderSerializer, OrderItemSerializer
 from .models import Product, Order, OrderItem
 
 
@@ -60,36 +59,27 @@ def product_list_api(request):
     })
 
 
-class OrderItemSerializer(ModelSerializer):
-    class Meta:
-        model = OrderItem
-        fields = ['product', 'quantity']
-
-
-class OrderSerializer(ModelSerializer):
-    products = OrderItemSerializer(many=True, allow_empty=False)
-
-    class Meta:
-        model = Order
-        fields = ['products', 'firstname', 'lastname', 'phonenumber', 'address']
-
-
 @transaction.atomic
 @api_view(['POST'])
 def register_order(request):
-    serializer = OrderSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+    order_serializer = OrderSerializer(data=request.data)
+    order_serializer.is_valid(raise_exception=True)
+    # order = order_serializer.save()
+    print(order_serializer)
+    # print(order)
 
-    order = Order.objects.create(
-        address=serializer.validated_data['address'],
-        lastname=serializer.validated_data['lastname'],
-        firstname=serializer.validated_data['firstname'],
-        phonenumber=serializer.validated_data['phonenumber'],
-    )
+    order_items_fields = order_serializer.validated_data['products']
+    # order_items_fields = request.data.get('products', [])
 
-    order_items_fields = serializer.validated_data['products']
-    order_items = [OrderItem(order=order, **products) for products in order_items_fields]
-    OrderItem.objects.bulk_create(order_items)
+    # product_serializer = OrderItemSerializer(data=request.data['products'], many=True, allow_empty=False)
+    # product_serializer.is_valid(raise_exception=True)
+    # products = product_serializer.save()
+    # print(products)
+
+    print(order_items_fields)
+    # order_items = [OrderItem(order=order, **products) for products in order_items_fields]
+    # OrderItem.objects.bulk_create(order_items)
+    order = order_serializer.save()
 
     return Response({
         'id': order.id,

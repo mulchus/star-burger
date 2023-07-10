@@ -2,7 +2,7 @@ import requests
 
 from django.db import models
 from django.db.models import F, Sum
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from django.db.models import Prefetch
@@ -225,7 +225,7 @@ class Order(models.Model):
         db_index=True,
     )
 
-    restaurant = models.ForeignKey(
+    selected_restaurant = models.ForeignKey(
         Restaurant,
         related_name='orders',
         verbose_name="ресторан",
@@ -291,10 +291,8 @@ class OrderItemQuerySet(models.QuerySet):
         def get_location(address):
             try:
                 location = Location.objects.get(address=address)
-                # print(f'Получен адрес {location.address}')
             except ObjectDoesNotExist:
                 location = create_location(address)
-                # print(f'Добавлен адрес {location.address}')
             return location
 
         # начало основной функции
@@ -317,7 +315,7 @@ class OrderItemQuerySet(models.QuerySet):
             order__status__exact='Выполнен').select_related(
             'order', 'product').values(
             'order__pk', 'order__status', 'order__payment_method', 'order__lastname', 'order__firstname',
-            'order__address', 'order__comment', 'order__phonenumber', 'order__restaurant__name').annotate(
+            'order__address', 'order__comment', 'order__phonenumber', 'order__selected_restaurant__name').annotate(
             total_price=Sum(F('product_fix_price') * F('quantity'))).order_by('-order__status')
 
         for record in orders_to_display:
@@ -331,11 +329,7 @@ class OrderItemQuerySet(models.QuerySet):
             for restaurant_id in unique:
                 if unique[restaurant_id] == len(order_items):
                     restaurant = Restaurant.objects.get(pk=restaurant_id)
-                    # print(f'запрашиваем координаты ресторана {restaurant.address}')
                     restaurant_coordinates = get_location(restaurant.address)
-                    # print(f'restaurant_coordinates {restaurant_coordinates}')
-                    # print(restaurant_coordinates.lat, restaurant_coordinates.lon,
-                    #       delivery_coordinates.lat, delivery_coordinates.lon)
                     if restaurant_coordinates.lat and restaurant_coordinates.lon \
                             and delivery_coordinates.lat and delivery_coordinates.lon:
                         restaurant_distance = \
@@ -370,14 +364,18 @@ class OrderItem(models.Model):
     quantity = models.IntegerField(
         'количество',
         db_index=True,
+        validators=[
+            MaxValueValidator(99),
+            MinValueValidator(1)
+        ],
     )
 
     product_fix_price = models.DecimalField(
         'фиксированная цена товара',
         db_index=True,
-        default=0,
         max_digits=5,
-        decimal_places=2
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
     )
 
     objects = OrderItemQuerySet.as_manager()
