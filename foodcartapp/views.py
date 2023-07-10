@@ -64,9 +64,9 @@ def product_list_api(request):
 def register_order(request):
     order_serializer = OrderSerializer(data=request.data)
     order_serializer.is_valid(raise_exception=True)
-    # order = order_serializer.save()
+    order = order_serializer.create(order_serializer.validated_data)
     print(order_serializer)
-    # print(order)
+    print(order)
 
     order_items_fields = order_serializer.validated_data['products']
     # order_items_fields = request.data.get('products', [])
@@ -79,7 +79,7 @@ def register_order(request):
     print(order_items_fields)
     # order_items = [OrderItem(order=order, **products) for products in order_items_fields]
     # OrderItem.objects.bulk_create(order_items)
-    order = order_serializer.save()
+    # order = order_serializer.create()
 
     return Response({
         'id': order.id,
