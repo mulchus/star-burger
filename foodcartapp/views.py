@@ -62,25 +62,9 @@ def product_list_api(request):
 @transaction.atomic
 @api_view(['POST'])
 def register_order(request):
-    order_serializer = OrderSerializer(data=request.data)
-    order_serializer.is_valid(raise_exception=True)
-    order = order_serializer.create(order_serializer.validated_data)
-    print(f'order_serializer.validated_data {order_serializer.validated_data}')
-    print(f'order {order}')
-    order.save()
-
-    # order_items_fields = order_serializer.validated_data['products']
-    # order_items_fields = request.data.get('products', [])
-
-    # product_serializer = OrderItemSerializer(data=request.data['products'], many=True, allow_empty=False)
-    # product_serializer.is_valid(raise_exception=True)
-    # products = product_serializer.save()
-    # print(products)
-
-    # print(order_items_fields)
-    # order_items = [OrderItem(order=order, **products) for products in order_items_fields]
-    # OrderItem.objects.bulk_create(order_items)
-    # order = order_serializer.create()
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    order = serializer.save()
 
     return Response({
         'id': order.id,
