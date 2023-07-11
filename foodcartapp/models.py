@@ -188,10 +188,9 @@ class Order(models.Model):
 
     comment = models.TextField(
         'комментарий',
-        blank=True,
-        null=True,
         db_index=True,
         default='',
+        blank=True,
     )
 
     registered_datetime = models.DateTimeField(
@@ -220,8 +219,9 @@ class Order(models.Model):
         choices=(
             ("Наличные", "Наличные"),
             ("Электронно", "Электронно"),
+            ("Не указано", "Не указано"),
         ),
-        default="Электронно",
+        default="Не указано",
         db_index=True,
     )
 
@@ -376,7 +376,8 @@ class OrderItem(models.Model):
         max_digits=5,
         decimal_places=2,
         validators=[MinValueValidator(0)],
-        default=0,
+        null=True,
+        blank=True,
     )
 
     objects = OrderItemQuerySet.as_manager()

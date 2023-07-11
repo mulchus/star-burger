@@ -141,9 +141,9 @@ class OrderAdmin(admin.ModelAdmin):
     def save_formset(self, request, form, formset, change):
 
         order = form.save(commit=False)
-        if order.restaurant and order.status == 'Уточняется':
+        if order.selected_restaurant and order.status == 'Уточняется':
             order.status = 'Собирается'
-        elif not order.restaurant and order.status == 'Собирается':
+        elif not order.selected_restaurant and order.status == 'Собирается':
             order.status = 'Уточняется'
         order.save()
 
