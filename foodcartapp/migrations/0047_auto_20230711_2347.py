@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='order',
             name='comment',
-            field=models.TextField(blank=True, db_index=True, default='', verbose_name='комментарий'),
+            field=models.TextField(blank=True, db_index=True, verbose_name='комментарий'),
         ),
         migrations.AlterField(
             model_name='order',

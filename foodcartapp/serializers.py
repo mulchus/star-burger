@@ -16,7 +16,7 @@ class OrderSerializer(serializers.ModelSerializer):
         products_data = validated_data.pop('products')
         order = Order.objects.create(**validated_data)
         for order_item in products_data:
-            OrderItem.objects.create(order=order, **order_item)
+            OrderItem.objects.create(order=order, **order_item, product_fix_price=order_item['product'].price)
         return order
 
     class Meta:
