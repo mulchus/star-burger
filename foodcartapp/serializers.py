@@ -1,8 +1,5 @@
-# from rest_framework.serializers import ModelSerializer
-# from rest_framework.serializers import ListField
 from rest_framework import serializers
-from .models import Order, OrderItem, Product
-from phonenumber_field.modelfields import PhoneNumberField
+from .models import Order, OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -16,16 +13,10 @@ class OrderSerializer(serializers.ModelSerializer):
     products = OrderItemSerializer(many=True, allow_empty=False)
 
     def create(self, validated_data):
-        order = Order.objects.create(
-            address=validated_data['address'],
-            lastname=validated_data['lastname'],
-            firstname=validated_data['firstname'],
-            phonenumber=validated_data['phonenumber'],
-        )
-
-        order_items_fields = validated_data['products']
-        order_items = [OrderItem(order=order, **products) for products in order_items_fields]
-        OrderItem.objects.bulk_create(order_items)
+        products_data = validated_data.pop('products')
+        order = Order.objects.create(**validated_data)
+        for order_item in products_data:
+            OrderItem.objects.create(order=order, **order_item)
         return order
 
     class Meta:
