@@ -1,10 +1,16 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db import transaction
 from .serializers import OrderSerializer, OrderItemSerializer
 from .models import Product, Order, OrderItem
+
+
+def index(request):
+    a = None
+    a.hello() # Creating an error with an invalid line of code
+    return HttpResponse("Hello, world. You're at the pollapp index.")
 
 
 def banners_list_api(request):
