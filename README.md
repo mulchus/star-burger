@@ -2,6 +2,7 @@
 
 Это сайт сети ресторанов Star Burger. Здесь можно заказать превосходные бургеры с доставкой на дом.
 
+[ссылка на сайт - https://testoftest.ru/](https://testoftest.ru/)
 ![скриншот сайта](https://dvmn.org/filer/canonical/1594651635/686/)
 
 
