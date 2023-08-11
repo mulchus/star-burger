@@ -54,6 +54,62 @@ sudo -u postgres psql
 sudo pg_lsclusters
 sudo pg_ctlcluster [Ver кластера] main start
 ```
+
+### 2.2. Установите [сервер Nginx](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/)
+Затем создайте файл настроек:
+```sh
+vi /etc/nginx/sites-enabled/star-burger
+```
+со следующим содержимым:
+```
+# HTTP - redirect all requests to HTTPS
+server {
+    server_name имя_домена www.имя_домена;
+
+    listen ip-адрес_сервера:80;
+    if ($host = 'www.имя_домена') {
+        return 301 https://имя_домена$request_uri;
+    }
+
+    return 301 https://имя_домена$request_uri;
+}
+
+server {
+    server_name имя_домена www.имя_домена;
+
+    location / {
+      include '/etc/nginx/proxy_params';
+      proxy_pass http://127.0.0.1:8080/;
+    }
+
+    location /media/ {
+        alias /opt/star-burger/media/;
+    }
+
+    location /static/ {
+        alias /opt/star-burger/staticfiles/;
+    }
+
+    if ($host = 'www.имя_домена') {
+        return 301 https://имя_домена$request_uri;
+    }
+
+
+    listen ip-адрес_сервера:443 ssl;
+    ssl_certificate /etc/letsencrypt/live/testoftest.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/testoftest.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+```
+Выход из редактора: Escape, `:w`, Enter, `:q`, Enter
+
+Перезапустить сервер Nginx:
+```sh
+systemctl restart nginx
+```
+
+
 ### 3. Далее инициализируем для работы БД
 (подставляемые переменные ниже будут задействованы для работы сайта):
 ```sh
@@ -124,13 +180,19 @@ npm --version
 
 ### Далее запустите скрипт деплоя проекта, который выполнит цикл действий по установке проекта:
 ```sh
+chmod +x deploy_star_burger.sh
 ./deploy_star_burger.sh
 ```
 Этот скрипт используется и после обновления кода на github.
 
 ### Запустите фронтенд:
 
-Во втором окне, где устанавливался Node JS, запустите сборку фронтенда и не выключайте. Parcel будет работать в фоне и следить за изменениями в JS-коде:
+
+Во втором окне, где устанавливался Node JS, перейдите в виртуальное окружение:
+```sh
+source venv/bin/activate
+```
+Далее запустите сборку фронтенда и не выключайте. Parcel будет работать в фоне и следить за изменениями в JS-коде:
 ```sh
 ./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
 ```
@@ -149,7 +211,11 @@ Parcel будет следить за файлами в каталоге `bundle
 
 
 ### Запустите бэкенд:
-В первом окне, где устанавливался Python:
+В первом окне, где устанавливался Python, перейдите в виртуальное окружение:
+```sh
+source venv/bin/activate
+```
+Далее:
 ```sh
 gunicorn -b ip-адрес_сервера:8080 --workers 3 star_burger.wsgi:application
 ```
