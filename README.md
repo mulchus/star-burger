@@ -150,7 +150,6 @@ python -m venv venv
 - `DEBUG=...  — дебаг-режим. Поставьте `True`, чтобы увидеть отладочную информацию в случае ошибки. Выключается значением `False`.
 - `ALLOWED_HOSTS=`... — по умолчанию: localhost, 127.0.0.1. [документация Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts).
 - `YANDEX_API_KEY=`... - получить ключ от сервиса Яндекс [Yandex geocoder API](https://developer.tech.yandex.ru/services).
-- `ROLLBAR_ACCESS_TOKEN=`... - зарегистрировать проект и [взять ключ `post_server_item` на этой странице](https://rollbar.com/mulch/star-burger/settings/access_tokens/).
 - `DATABASE_URL=`'postgres://`user`:`pass`@localhost/`dbname`', где:
   - user - имя пользователя БД;
   - pass - пароль пользователя БД;
@@ -243,16 +242,17 @@ gunicorn -b ip-адрес_сервера:8080 --workers 3 star_burger.wsgi:appli
 
 - в файле `.env` в каталоге `star_burger/` измените следующие настройки:
 
-- `DEBUG` — дебаг-режим. Поставьте `False`.
-- `SECRET_KEY` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
+- `DEBUG=` — дебаг-режим. Поставьте `False`.
+- `SECRET_KEY=` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
    Получить секретный ключ Django:
 ```shell
 python
 >>> from django.core.management.utils import get_random_secret_key
 >>> get_random_secret_key()
 ```
-- `ALLOWED_HOSTS` — необходимо внести через запятую IP-адреса или домены своего сервера. [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
-
+- `ALLOWED_HOSTS=` — необходимо внести через запятую IP-адреса или домены своего сервера. [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
+- `ROLLBAR_ACCESS_TOKEN=`... - зарегистрировать проект и взять ключ POST_SERVER_ITEM_ACCESS_TOKEN в разделе `Settings - Project Access Tokens`
+- `ROLLBAR_ENVIRONMENT=production`
 
 
 ## Цели проекта
