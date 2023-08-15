@@ -10,8 +10,10 @@ echo "python:"
 echo $(pip install -r requirements.txt)
 echo "Node JS:"
 echo $(npm ci --dev)
+echo "Пересобираем проект JS"
+echo $(./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./")
 echo "Выполняем миграции"
-echo $(./manage.py migrate)
+echo $(./manage.py migrate --noinput)
 echo "Обновляем статику"
 echo $(./manage.py collectstatic --noinput)
 echo "Перезапускаем сайт"
