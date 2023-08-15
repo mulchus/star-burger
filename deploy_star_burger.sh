@@ -15,7 +15,7 @@ echo "Выполняем миграции"
 ./manage.py migrate --noinput
 echo "Коммитим изменения в git"
 git commit -a --allow-empty-message -m ''
-# git push
+git push
 echo "Обновляем статику"
 ./manage.py collectstatic --noinput
 echo "Перезапускаем сайт"
