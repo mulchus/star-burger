@@ -13,9 +13,6 @@ echo "Пересобираем проект JS"
 ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 echo "Выполняем миграции"
 ./manage.py migrate --noinput
-echo "Коммитим изменения в git"
-git commit -a --allow-empty-message -m ''
-git push
 echo "Обновляем статику"
 ./manage.py collectstatic --noinput
 echo "Перезапускаем сайт"
