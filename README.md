@@ -57,7 +57,55 @@ sudo pg_ctlcluster [Ver кластера] main start
 ```
 
 ### 2.2. Установите [сервер Nginx](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/)
-Затем создайте файл настроек:
+
+# Для деплоя в виде docker compose (рекомендуется)
+
+Создайте файл `.env.prod` в каталоге `star_burger/` и положите туда такой код:
+- `DEBUG=` — дебаг-режим. Поставьте `False`.
+- `SECRET_KEY=` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
+   Получить секретный ключ Django:
+```shell
+python
+>>> from django.core.management.utils import get_random_secret_key
+>>> get_random_secret_key()
+```
+- `ALLOWED_HOSTS=` — необходимо внести через запятую IP-адреса или домены своего сервера. [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
+- `YANDEX_API_KEY=`... - получить ключ от сервиса Яндекс [Yandex geocoder API](https://developer.tech.yandex.ru/services).
+- `ROLLBAR_ACCESS_TOKEN=`... - зарегистрировать проект и взять ключ POST_SERVER_ITEM_ACCESS_TOKEN в разделе `Settings - Project Access Tokens`
+- `ROLLBAR_ENVIRONMENT=production`
+- `SQL_ENGINE=django.db.backends.postgresql`
+- `SQL_DATABASE=star_burger_prod`
+- `SQL_USER=`имя_пользователя_БД (собственное, по английски)
+- `SQL_PASSWORD=`пароль_пользователя_БД (собственный, англ.)
+- `SQL_HOST=db`
+- `SQL_PORT=5432`
+- `DATABASE=postgres`
+
+
+Создайте файл `.env.prod.db` в каталоге `star_burger/` и положите туда такой код:
+- `POSTGRES_USER`=имя_пользователя_БД (собственное, по английски)
+- `POSTGRES_PASSWORD=`пароль_пользователя_БД (собственный, англ.)
+- `POSTGRES_DB`=star_burger_prod
+
+Остановите основной сервер Nginx:
+```sh
+systemctl stop nginx
+```
+
+Далее запустите скрипт деплоя проекта, который выполнит цикл действий по докеризации контейнеров проекта:
+```sh
+chmod +x deploy_star_burger.sh
+./deploy_star_burger.sh
+```
+Этот скрипт используется и после обновления кода на github.
+
+При необходимости добавления в базу данных суперпользователя и захода в админку выполните команду:
+```sh
+docker-compose -f docker-compose.prod.yml exec web python3 manage.py createsuperuser
+```
+
+# Для деплоя в виде демона ()
+Создайте файл настроек:
 ```sh
 vi /etc/nginx/sites-enabled/star-burger
 ```

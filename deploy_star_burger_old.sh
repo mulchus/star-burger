@@ -1,15 +1,22 @@
 #!/bin/bash
 set -e
+echo "Переходим в виртуальное окружение"
+source venv/bin/activate
 echo "Обновляем код из github"
 git pull origin master
-echo "Создаем/обновляем образы web, db, nginx"
-docker-compose -f docker-compose.prod.yml up -d --build --noinput
-echo "Собираем статику"
-docker-compose -f docker-compose.prod.yml exec web python3 manage.py collectstatic --noinput
+echo "Устанавливаем библиотеки"
+echo "Pyton"
+pip install -r requirements.txt
+echo "Node JS:"
+npm ci --dev
+echo "Пересобираем проект JS"
+./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 echo "Выполняем миграции"
-docker-compose -f docker-compose.prod.yml exec web python3 manage.py migrate --noinput
-echo "Загружаем в БД данные"
-cat data.json | sudo docker exec -i star-burger_web_1 python manage.py loaddata --format=json -
+./manage.py migrate --noinput
+echo "Обновляем статику"
+./manage.py collectstatic --noinput
+echo "Перезапускаем сайт"
+systemctl restart star-burger
 eval "$(grep ^ROLLBAR_ENVIRONMENT= .env)"
 eval "$(grep ^ROLLBAR_ACCESS_TOKEN= .env)"
 GIT_SHA=$(exec git rev-parse HEAD)
