@@ -2,7 +2,7 @@
 
 Это сайт сети ресторанов Star Burger. Здесь можно заказать превосходные бургеры с доставкой на дом.
 
-[ссылка на сайт - https://testoftest.ru/](https://testoftest.ru/)
+ссылка на сайт - [testoftest.ru](http://testoftest.ru/)
 ![скриншот сайта](https://dvmn.org/filer/canonical/1594651635/686/)
 
 
@@ -91,10 +91,13 @@ python
 ```sh
 systemctl stop nginx
 ```
-
-Далее запустите скрипт деплоя проекта, который выполнит цикл действий по докеризации контейнеров проекта:
+Установите права на запуск файлам:
 ```sh
 chmod +x deploy_star_burger.sh
+chmod +x entrypoint.prod.sh
+```
+Далее запустите скрипт деплоя проекта, который выполнит цикл действий по докеризации контейнеров проекта:
+```sh
 ./deploy_star_burger.sh
 ```
 Этот скрипт используется и после обновления кода на github.
@@ -103,6 +106,13 @@ chmod +x deploy_star_burger.sh
 ```sh
 docker-compose -f docker-compose.prod.yml exec web python3 manage.py createsuperuser
 ```
+Для удаления всех образов и контейнеров и очистки диска выполните:
+
+```sh
+chmod +x delete.sh
+./delete.sh
+````
+
 
 # Для деплоя в виде демона ()
 Создайте файл настроек:

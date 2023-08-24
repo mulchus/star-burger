@@ -3,7 +3,7 @@ set -e
 echo "Обновляем код из github"
 git pull origin master
 echo "Создаем/обновляем образы web, db, nginx"
-docker-compose -f docker-compose.prod.yml up -d --build --noinput
+docker-compose -f docker-compose.prod.yml up -d --build
 echo "Собираем статику"
 docker-compose -f docker-compose.prod.yml exec web python3 manage.py collectstatic --noinput
 echo "Выполняем миграции"
