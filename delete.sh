@@ -18,4 +18,7 @@ docker rmi star-burger_nginx
 echo "Prune all old data"
 docker system prune -a -f
 
+echo "Remove volumes"
+docker volume rm star-burger_static_volume star-burger_media_volume star-burger_postgres_data
+
 echo "Очистка успешно завершена"

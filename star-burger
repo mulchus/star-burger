@@ -1,0 +1,40 @@
+server {
+    server_name 45.12.73.34;
+    listen 80;
+    return 301 https://testoftest.ru;
+}
+
+server {
+    server_name testoftest.ru www.testoftest.ru;
+    listen 80;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 80;
+    server_name testoftest.ru www.testoftest.ru;
+
+    listen 45.12.73.34:443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/testoftest.ru/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/testoftest.ru/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    # Путь по которому certbot сможет проверить сервер на подлинность
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        include '/etc/nginx/proxy_params';
+        proxy_pass http://127.0.0.1:8000/;
+    }
+
+    location /static/ {
+        alias /home/star-burger/web/staticfiles/;
+    }
+
+    location /media/ {
+        alias /home/star-burger/web/media/;
+    }
+}

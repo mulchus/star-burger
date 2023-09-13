@@ -1,11 +1,10 @@
 import os
-import dj_database_url
 
 from environs import Env
 
 
 env = Env()
-env.read_env()
+env.read_env('.env.prod', recurse=False)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -100,13 +99,6 @@ DATABASES = {
         "PORT": os.environ.get("SQL_PORT", "5432"),
     }
 }
-
-# DATABASES = {
-#     'default': dj_database_url.config(
-#         conn_max_age=600,
-#         conn_health_checks=True,
-#     ),
-# }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
