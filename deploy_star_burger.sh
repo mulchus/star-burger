@@ -8,21 +8,18 @@ echo "Обновляем настройки Nginx и перезапускаем 
 cp star-burger /etc/nginx/sites-enabled/
 systemctl restart nginx
 
-echo "Создаем volume для media"
-if ! [ -d /home/star-burger/web/media ]; then
-        mkdir /home/star-burger/web/media
-fi
-docker volume create --driver local --opt type=none --opt device=/home/star-burger/web/media --opt o=bind star-burger_media_volume
-
 echo "Создаем/обновляем образы web, db"
 docker-compose -f docker-compose.prod.yml up -d --build
 docker exec -u root star-burger_web_1 chown star-burger:star-burger /home/star-burger/web/media
+docker exec -u root star-burger_web_1 chown star-burger:star-burger /home/star-burger/web/staticfiles
+
+echo "Создаем папку staticfiles"
+if ! [ -d ./staticfiles ]; then
+                mkdir staticfiles
+fi
 
 echo "Собираем статику"
 docker-compose -f docker-compose.prod.yml exec web python3 manage.py collectstatic --noinput
-
-echo "Копируем статику на хост"
-docker cp star-burger_web_1:/home/star-burger/web/staticfiles /home/star-burger/web/
 
 echo "Выполняем миграции"
 docker-compose -f docker-compose.prod.yml exec web python3 manage.py migrate --noinput

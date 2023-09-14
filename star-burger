@@ -31,10 +31,10 @@ server {
     }
 
     location /static/ {
-        alias /home/star-burger/web/staticfiles/;
+        alias /opt/star-burger/staticfiles/;
     }
 
     location /media/ {
-        alias /home/star-burger/web/media/;
+        alias /opt/star-burger/media/;
     }
 }
