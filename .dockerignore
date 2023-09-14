@@ -1,3 +1,14 @@
 .git
 node_modules
 build
+old
+.editorconfig
+.dockerignore
+.gitignore
+.git
+README.md
+star-burger
+media
+deploy_star_burger.sh
+docker-compose.prod.yml
+delete.sh
