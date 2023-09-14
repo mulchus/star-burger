@@ -3,6 +3,8 @@ set -e
 
 echo "Обновляем код из github"
 git pull origin master
+chmod u+x entrypoint.prod.sh
+chmod u+x delete.sh
 
 echo "Обновляем настройки Nginx и перезапускаем его"
 cp star-burger /etc/nginx/sites-enabled/
