@@ -10,6 +10,7 @@ systemctl restart nginx
 
 echo "Создаем/обновляем образы web, db"
 docker-compose -f docker-compose.prod.yml up -d --build
+docker update --restart unless-stopped star-burger_web_1 star-burger_db_1
 docker exec -u root star-burger_web_1 chown star-burger:star-burger /home/star-burger/web/media
 docker exec -u root star-burger_web_1 chown star-burger:star-burger /home/star-burger/web/staticfiles
 
