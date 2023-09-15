@@ -17,9 +17,7 @@ docker exec -u root star-burger_web_1 chown star-burger:star-burger /home/star-b
 docker exec -u root star-burger_web_1 chown star-burger:star-burger /home/star-burger/web/staticfiles
 
 echo "Создаем папку staticfiles"
-if ! [ -d ./staticfiles ]; then
-                mkdir staticfiles
-fi
+mkdir -p staticfiles
 
 echo "Собираем статику"
 docker-compose -f docker-compose.prod.yml exec web python3 manage.py collectstatic --noinput
