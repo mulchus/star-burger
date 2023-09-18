@@ -70,3 +70,7 @@ USER star-burger
 
 # run entrypoint.prod.sh
 ENTRYPOINT ["/home/star-burger/web/entrypoint.prod.sh"]
+
+# collect static
+#RUN chown -R star-burger:star-burger $APP_HOME/staticfiles
+RUN ./manage.py collectstatic --noinput
